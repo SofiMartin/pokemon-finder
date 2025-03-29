@@ -1,104 +1,44 @@
 import { useState, useEffect } from 'react'
-import axios from 'axios'
-import { toast } from 'react-toastify'
 import ErrorMessage from './ErrorMessage'
+import usePokemonData from '../hooks/usePokemonData'
 
-const PokemonSearch = ({ setPokemonData, setLoading, limit, setLimit }) => {
+const PokemonSearch = ({ setPokemonData: setParentPokemonData, setLoading: setParentLoading }) => {
   const [searchTerm, setSearchTerm] = useState('')
-  const [error, setError] = useState('')
+  const [limit, setLimit] = useState(20)
   
-  // Función para buscar por nombre
-  const searchByName = async (e) => {
+  // Usamos nuestro hook personalizado
+  const { 
+    pokemonData, 
+    loading, 
+    error, 
+    searchPokemonByName, 
+    fetchMultiplePokemon 
+  } = usePokemonData()
+  
+  // Sincronizamos el estado local con el estado del padre
+  useEffect(() => {
+    setParentPokemonData(pokemonData)
+  }, [pokemonData, setParentPokemonData])
+  
+  useEffect(() => {
+    setParentLoading(loading)
+  }, [loading, setParentLoading])
+  
+  // Función para manejar la búsqueda
+  const handleSearch = (e) => {
     e.preventDefault()
-    
-    if (!searchTerm.trim()) {
-      toast.error('Por favor ingresa un nombre de Pokémon')
-      setError('Debes ingresar un nombre de Pokémon para realizar la búsqueda')
-      return
-    }
-    
-    setLoading(true)
-    setError('')
-    
-    try {
-      // Usamos axios para buscar por nombre
-      const response = await axios.get(`https://pokeapi.co/api/v2/pokemon/${searchTerm.toLowerCase()}`)
-      
-      // Si es exitoso, formatear los datos
-      const pokemon = {
-        id: response.data.id,
-        name: response.data.name,
-        image: response.data.sprites.other['official-artwork'].front_default || response.data.sprites.front_default,
-        types: response.data.types.map(type => type.type.name),
-        height: response.data.height / 10, // Convertir a metros
-        weight: response.data.weight / 10, // Convertir a kg
-        abilities: response.data.abilities.map(ability => ability.ability.name),
-        stats: response.data.stats.map(stat => ({
-          name: stat.stat.name,
-          value: stat.base_stat
-        }))
-      }
-      
-      setPokemonData([pokemon])
-      toast.success(`¡Pokémon ${pokemon.name} encontrado!`)
-    } catch (error) {
-      console.error('Error buscando Pokémon:', error)
-      toast.error(`No se encontró el Pokémon "${searchTerm}"`)
-      setError(`No se encontró ningún Pokémon con el nombre "${searchTerm}". Verifica que el nombre esté escrito correctamente.`)
-      setPokemonData([])
-    } finally {
-      setLoading(false)
-    }
+    searchPokemonByName(searchTerm)
   }
   
-  // Función para obtener múltiples Pokémon
-  const fetchMultiplePokemon = async () => {
-    setLoading(true)
-    setError('')
-    
-    try {
-      // Usamos fetch para obtener la lista
-      const response = await fetch(`https://pokeapi.co/api/v2/pokemon?limit=${limit}&offset=0`)
-      const data = await response.json()
-      
-      // Para cada Pokémon en la lista, obtenemos sus detalles
-      const pokemonDetails = await Promise.all(
-        data.results.map(async (pokemon) => {
-          const detailResponse = await fetch(pokemon.url)
-          const details = await detailResponse.json()
-          
-          return {
-            id: details.id,
-            name: details.name,
-            image: details.sprites.other['official-artwork'].front_default || details.sprites.front_default,
-            types: details.types.map(type => type.type.name),
-            height: details.height / 10,
-            weight: details.weight / 10,
-            abilities: details.abilities.map(ability => ability.ability.name),
-            stats: details.stats.map(stat => ({
-              name: stat.stat.name,
-              value: stat.base_stat
-            }))
-          }
-        })
-      )
-      
-      setPokemonData(pokemonDetails)
-      toast.success(`Se cargaron ${pokemonDetails.length} Pokémon`)
-    } catch (error) {
-      console.error('Error obteniendo Pokémon:', error)
-      toast.error('Error al cargar los Pokémon')
-      setError('Ocurrió un error al intentar cargar los Pokémon. Por favor, intenta nuevamente más tarde.')
-      setPokemonData([])
-    } finally {
-      setLoading(false)
-    }
+  // Función para cargar múltiples Pokémon
+  const handleLoadMultiple = () => {
+    fetchMultiplePokemon(limit)
   }
   
   // Cargar Pokémon al montar el componente
   useEffect(() => {
-    fetchMultiplePokemon()
-  }, [])
+    fetchMultiplePokemon(limit)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
   
   return (
     <div className="mb-8 bg-white rounded-lg shadow-md p-6">
@@ -106,7 +46,7 @@ const PokemonSearch = ({ setPokemonData, setLoading, limit, setLimit }) => {
       
       {error && <ErrorMessage message={error} />}
       
-      <form onSubmit={searchByName} className="mb-6">
+      <form onSubmit={handleSearch} className="mb-6">
         <div className="flex flex-col md:flex-row gap-4">
           <input
             type="text"
@@ -143,7 +83,7 @@ const PokemonSearch = ({ setPokemonData, setLoading, limit, setLimit }) => {
           </div>
           <button
             type="button"
-            onClick={fetchMultiplePokemon}
+            onClick={handleLoadMultiple}
             className="px-6 py-2 bg-green-600 text-white font-medium rounded-md hover:bg-green-700 transition-colors md:self-end"
           >
             Cargar Pokémon

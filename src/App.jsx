@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react'
 import Header from './components/Header'
 import PokemonSearch from './components/PokemonSearch'
@@ -10,7 +11,6 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [favorites, setFavorites] = useState([])
   const [showFavorites, setShowFavorites] = useState(false)
-  const [limit, setLimit] = useState(20)
 
   // Cargar favoritos desde localStorage al iniciar
   useEffect(() => {
@@ -28,8 +28,6 @@ function App() {
             <PokemonSearch 
               setPokemonData={setPokemonData} 
               setLoading={setLoading}
-              limit={limit}
-              setLimit={setLimit}
             />
             <PokemonList 
               pokemonData={pokemonData} 
