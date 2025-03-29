@@ -4,7 +4,7 @@ Una aplicación web desarrollada con React + Vite que permite buscar Pokémon ut
 
 ## 🚀 Demo
 
-[Link al sitio desplegado en Vercel/Netlify]
+https://pokesofi.netlify.app/
 
 ## ✨ Características
 
